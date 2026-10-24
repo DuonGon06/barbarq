@@ -252,7 +252,9 @@ static void HookOne(const char *name, uintptr_t rva, void *fn, void **orig) {
     Log("[HOOK] %s: BO QUA - chua co Dobby (them libs/libdobby.a roi build lai)", name);
     (void)rva; (void)fn; (void)orig;
 #else
-    int rc = DobbyHook(At(rva), (dobby_dummy_func_t)fn, (dobby_dummy_func_t *)orig);
+    // API Dobby ban moi (master): int DobbyHook(void *addr, void *fake, void **origin)
+    // Kieu dobby_dummy_func_t chi co o ban Dobby cu - dung la loi bien dich.
+    int rc = DobbyHook(At(rva), fn, orig);
     if (rc == 0 && *orig) Log("[HOOK] OK   %-28s RVA 0x%llx @ %p", name, (unsigned long long)rva, At(rva));
     else                  Log("[HOOK] FAIL %-28s RVA 0x%llx rc=%d - gui log nay ve de sua", name, (unsigned long long)rva, rc);
 #endif
