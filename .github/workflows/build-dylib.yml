@@ -1,7 +1,9 @@
 name: Build BBQQHook.dylib
 
-# Dat file nay vao repo tai: .github/workflows/build-dylib.yml
-# Workflow tu lam: tai Dobby -> build Dobby cho iOS arm64 -> build dylib
+# v3 - SUA LOI: "Processor not configured" / "string no output variable specified"
+# Nguyen nhan: Dobby doc CMAKE_SYSTEM_PROCESSOR, ban cu khong truyen bien nay
+# nen no rong -> CMake chet o build_environment_check.cmake:33/53.
+# Ban nay truyen: CMAKE_SYSTEM_PROCESSOR=arm64 + OSX_SYSROOT=iphoneos.
 
 on:
   workflow_dispatch:
@@ -23,12 +25,14 @@ jobs:
           git clone --depth 1 https://github.com/jmpews/Dobby.git /tmp/Dobby
           cmake -S /tmp/Dobby -B /tmp/Dobby/build \
             -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
             -DCMAKE_BUILD_TYPE=Release
           cmake --build /tmp/Dobby/build --config Release -j3
           LIB=$(find /tmp/Dobby/build -name "libdobby.a" | head -1)
-          HDR=$(find /tmp/Dobby -maxdepth 2 -name "dobby.h" | head -1)
+          HDR=$(find /tmp/Dobby -maxdepth 3 -name "dobby.h" | head -1)
           echo "libdobby: $LIB"
           echo "dobby.h : $HDR"
           test -n "$LIB" && test -n "$HDR"
