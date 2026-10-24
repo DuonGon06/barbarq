@@ -1,0 +1,50 @@
+name: Build BBQQHook.dylib
+
+# Dat file nay vao repo tai: .github/workflows/build-dylib.yml
+# Workflow tu lam: tai Dobby -> build Dobby cho iOS arm64 -> build dylib
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "BBQQHook.mm"
+      - "build.sh"
+      - ".github/workflows/build-dylib.yml"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Dobby (thu vien hook) cho iOS arm64
+        run: |
+          set -e
+          git clone --depth 1 https://github.com/jmpews/Dobby.git /tmp/Dobby
+          cmake -S /tmp/Dobby -B /tmp/Dobby/build \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/Dobby/build --config Release -j3
+          LIB=$(find /tmp/Dobby/build -name "libdobby.a" | head -1)
+          HDR=$(find /tmp/Dobby -maxdepth 2 -name "dobby.h" | head -1)
+          echo "libdobby: $LIB"
+          echo "dobby.h : $HDR"
+          test -n "$LIB" && test -n "$HDR"
+          mkdir -p include libs
+          cp "$LIB" libs/libdobby.a
+          cp "$HDR" include/dobby.h
+          file libs/libdobby.a
+
+      - name: Build BBQQHook.dylib
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Upload dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: BBQQHook-dylib
+          path: BBQQHook.dylib
+          retention-days: 14
